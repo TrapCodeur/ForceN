@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "407157099726",
+    "project_id": "i-do-f0026",
+    "storage_bucket": "i-do-f0026.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:407157099726:android:74aa4168ca36736009d49f",
+        "android_client_info": {
+          "package_name": "com.example.i_do"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAnB6P4LMiVQMEuSnzqleiaP9wC87ZbJL0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
