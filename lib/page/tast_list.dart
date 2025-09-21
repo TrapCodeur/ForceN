@@ -27,16 +27,18 @@ class _TaskListState extends State<TaskList> {
   Stream<List<Task>> getTasksStream() {
     Query query = FirebaseFirestore.instance
         .collection('tasks')
-        .where("userId", isEqualTo: currentUser?.uid)
         .orderBy("createdAt", descending: true);
 
     if (selectedPriorityType != "Toutes") {
       query = query.where("priority", isEqualTo: selectedPriorityType);
     }
+    // On ne garde que les tâches de l'utilisateur connecté
+
 
     return query.snapshots().map(
           (snapshot) => snapshot.docs.map((doc) {
         final data = doc.data() as Map<String, dynamic>;
+
         return Task.fromMap(data, id: doc.id);
       }).toList(),
     );
@@ -82,6 +84,7 @@ class _TaskListState extends State<TaskList> {
             final task = tasks[index];
 
             return TaskCard(
+
               task: task,
               onEdit: () async {
                 Navigator.push(

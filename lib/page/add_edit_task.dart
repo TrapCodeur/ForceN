@@ -55,7 +55,9 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                 controller: _titleController,
                 decoration: InputDecoration(
                   label: Text("Titre"),
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -69,7 +71,9 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                 controller: _descriptionController,
                 decoration: InputDecoration(
                   label: Text("Description"),
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                 ),
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -83,7 +87,9 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                 value: _priority,
                 decoration: InputDecoration(
                   label: Text("Priorité"),
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                 ),
                 items: [
                   DropdownMenuItem(
@@ -106,7 +112,9 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                 initialValue: _date,
                 decoration: InputDecoration(
                   label: Text("Heure (ex: 10:15)"),
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                 ),
                 onChanged: (value) => _date = value,
               ),
@@ -115,49 +123,55 @@ class _AddEditTaskScreenState extends State<AddEditTaskScreen> {
                 initialValue: _time,
                 decoration: InputDecoration(
                   label: Text("date (ex: Aujourd'hui ou le 26/01/2025)"),
-                  border: OutlineInputBorder(),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(20),
+                  ),
                 ),
                 onChanged: (value) => _time = value,
               ),
               SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () async {
-                  if (_formkey.currentState!.validate()) {
-                    final newTask = Task(
-                      id: widget.task?.id,
-                      title: _titleController.text,
-                      description: _descriptionController.text,
-                      priority: _priority,
-                      date: _date,
-                      time: _time,
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    if (_formkey.currentState!.validate()) {
+                      final newTask = Task(
+                        id: widget.task?.id,
+                        title: _titleController.text,
+                        description: _descriptionController.text,
+                        priority: _priority,
+                        date: _date,
+                        time: _time,
 
-                    );
-                    if (widget.task == null) {
-                      await FirebaseFirestore.instance.collection('tasks').add({
-                        ...newTask.toMap(),
-                        'createdAt': FieldValue.serverTimestamp(),
-                        'userId': user?.uid,
-                      });
-                    } else {
-                      if (newTask.id == null) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          SnackBar(
-                            content: Text("Impossible de mettre à jour"),
-                          ),
-                        );
-                        return;
+                      );
+                      if (widget.task == null) {
+                        await FirebaseFirestore.instance.collection('tasks').add({
+                          ...newTask.toMap(),
+                          'createdAt': FieldValue.serverTimestamp(),
+                          'userId': user?.uid,
+
+                        });
+                      } else {
+                        if (newTask.id == null) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            SnackBar(
+                              content: Text("Impossible de mettre à jour"),
+                            ),
+                          );
+                          return;
+                        }
+                        await FirebaseFirestore.instance
+                            .collection('tasks')
+                            .doc(widget.task!.id)
+                            .update(newTask.toMap());
                       }
-                      await FirebaseFirestore.instance
-                          .collection('tasks')
-                          .doc(widget.task!.id)
-                          .update(newTask.toMap());
+                      Navigator.pop(context);
+                      FocusScope.of(context).unfocus();
                     }
-                    Navigator.pop(context);
-                    FocusScope.of(context).unfocus();
-                  }
-                },
-                child: Text(
-                  widget.task == null ? "Enregistrer" : "Mettre à jour",
+                  },
+                  child: Text(
+                    widget.task == null ? "Enregistrer" : "Mettre à jour",
+                  ),
                 ),
               ),
             ],
