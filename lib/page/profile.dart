@@ -1,15 +1,93 @@
-// Page pour le profil de l'utilisateur en utilisant Firebase Authentication
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:i_do/auth/register_page.dart';
 import 'package:i_do/page/home_page.dart';
 
-//import '../main.dart';
+class ProfilePage extends StatefulWidget {
+  const ProfilePage({super.key});
 
-class ProfilePage extends StatelessWidget {
-  ProfilePage({super.key});
+  @override
+  State<ProfilePage> createState() => _ProfilePageState();
+}
 
+class _ProfilePageState extends State<ProfilePage> {
   final User? user = FirebaseAuth.instance.currentUser;
+  final _formKey = GlobalKey<FormState>();
+  final TextEditingController _fullnameController = TextEditingController();
+  final TextEditingController _phoneController = TextEditingController();
+
+  Future<void> _createUser() async {
+    final usersCollection = FirebaseFirestore.instance.collection("users");
+    await usersCollection.doc(user!.uid).set({
+      "fullname": _fullnameController.text.trim(),
+      "phone": _phoneController.text.trim(),
+      "email": user?.email ?? "",
+      "createdAt": FieldValue.serverTimestamp(),
+    });
+  }
+
+  bool _isEditing = false;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _loadUserData();
+  }
+
+  Future<void> _loadUserData() async {
+    if (user == null) return;
+    DocumentSnapshot snapshot = await FirebaseFirestore.instance
+        .collection("users")
+        .doc(user!.uid)
+        .get();
+
+    if (snapshot.exists) {
+      var data = snapshot.data() as Map<String, dynamic>;
+      setState(() {
+        _fullnameController.text = data["fullname"] ?? "";
+        _phoneController.text = data["phone"] ?? "";
+      });
+    } else {
+      // Créer le document utilisateur si inexistant
+      await _createUser();
+    }
+  }
+
+  Future<void> _saveUserData() async {
+    if (user == null) return;
+
+    try {
+      await FirebaseFirestore.instance
+          .collection("users")
+          .doc(user!.uid)
+          .update({
+            "fullname": _fullnameController.text.trim(),
+            "phone": _phoneController.text.trim(),
+          });
+
+      setState(() => _isEditing = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("✅ Informations mises à jour avec succès"),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("❌ Erreur : $e"), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  @override
+  void dispose() {
+    _fullnameController.dispose();
+    _phoneController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -31,25 +109,23 @@ class ProfilePage extends StatelessWidget {
             UserAccountsDrawerHeader(
               accountName: Text(user?.email?.split('@')[0] ?? 'No Name'),
               accountEmail: Text(user?.email ?? 'No Email'),
-              currentAccountPicture: CircleAvatar(
+              currentAccountPicture: const CircleAvatar(
                 backgroundImage: AssetImage("assets/images/images.png"),
               ),
-              decoration: BoxDecoration(color: Colors.blue),
+              decoration: const BoxDecoration(color: Colors.blue),
             ),
             ListTile(
-              leading: Icon(Icons.settings),
-              title: Text("Profil"),
+              leading: const Icon(Icons.settings),
+              title: const Text("Profil"),
               onTap: () {
-                Navigator.pop(context); // Ferme le drawer
-                // Navigue vers la page profil ou autre
+                Navigator.pop(context);
               },
             ),
             ListTile(
-              leading: Icon(Icons.logout),
-              title: Text("Deconnexion"),
+              leading: const Icon(Icons.logout),
+              title: const Text("Deconnexion"),
               onTap: () async {
                 await FirebaseAuth.instance.signOut();
-                // Redirection vers la page de login après la déconnexion
                 Navigator.pushAndRemoveUntil(
                   context,
                   MaterialPageRoute(builder: (context) => const RegisterPage()),
@@ -60,29 +136,83 @@ class ProfilePage extends StatelessWidget {
           ],
         ),
       ),
-      body: Center(
-        child: Padding(
-          padding: EdgeInsets.all(16),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              CircleAvatar(
-                radius: 50,
-                backgroundImage: AssetImage("assets/images/images.png"),
-              ),
-              SizedBox(height: 16),
-              Text(
-                user?.email?.split('@')[0] ?? "Utilisateur",
-                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              ),
-              SizedBox(height: 8),
-              Text(user?.email ?? "Email", style: TextStyle(fontSize: 18)),
-              Padding(
-                padding: const EdgeInsets.all((30)),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: SingleChildScrollView(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                const CircleAvatar(
+                  radius: 50,
+                  backgroundImage: AssetImage("assets/images/images.png"),
+                ),
+                const SizedBox(height: 16),
+                Text(
+                  user?.email?.split('@')[0] ?? "Utilisateur",
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  user?.email ?? "Email",
+                  style: const TextStyle(fontSize: 18),
+                ),
+                const SizedBox(height: 20),
+
+                // --- FORMULAIRE ---
+                Form(
+                  key: _formKey,
+                  child: Column(
+                    children: [
+                      TextField(
+                        controller: _fullnameController,
+                        decoration: InputDecoration(
+                          labelText: "Prénom et Nom",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        controller: _phoneController,
+                        decoration: InputDecoration(
+                          labelText: "Numéro de téléphone",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      TextField(
+                        enabled: false,
+
+                        decoration: InputDecoration(
+                          labelText: "Adresse email",
+                          hintText: user?.email ?? "Votre adresse email",
+                          border: OutlineInputBorder(
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                      ElevatedButton(
+                        onPressed: () async {
+                          await _saveUserData();
+                        },
+                        child: const Text("Enregistrer"),
+                      ),
+                    ],
+                  ),
+                ),
+
+                const SizedBox(height: 30),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
                   children: [
-                    SizedBox(width: 20),
                     ElevatedButton.icon(
                       onPressed: () {
                         Navigator.push(
@@ -90,34 +220,32 @@ class ProfilePage extends StatelessWidget {
                           MaterialPageRoute(
                             builder: (context) => const HomePage(),
                           ),
-
-                          //Action pour retourner à la page d'accueil
                         );
                       },
-                      label: Text("Retour"),
-                      icon: Icon(Icons.arrow_back),
+                      label: const Text("Retour"),
+                      icon: const Icon(Icons.arrow_back),
                     ),
-
+                    const SizedBox(width: 20),
                     ElevatedButton.icon(
-                      onPressed: () {
-                        FirebaseAuth.instance.signOut();
-                        Navigator.push(
+                      onPressed: () async {
+                        await FirebaseAuth.instance.signOut();
+                        Navigator.pushReplacement(
                           context,
                           MaterialPageRoute(
-                            builder: (context) => RegisterPage(),
+                            builder: (context) => const RegisterPage(),
                           ),
                         );
                       },
-                      label: Text("Deconnexion"),
-                      style: ButtonStyle(
-                        backgroundColor: WidgetStateProperty.all(Colors.red),
+                      label: const Text("Deconnexion"),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
                       ),
-                      icon: Icon(Icons.logout, color: Colors.white),
+                      icon: const Icon(Icons.logout, color: Colors.white),
                     ),
                   ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
