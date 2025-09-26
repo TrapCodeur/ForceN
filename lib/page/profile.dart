@@ -199,11 +199,14 @@ class _ProfilePageState extends State<ProfilePage> {
                         ),
                       ),
                       const SizedBox(height: 16),
-                      ElevatedButton(
-                        onPressed: () async {
-                          await _saveUserData();
-                        },
-                        child: const Text("Enregistrer"),
+                      SizedBox(
+                        width: double.infinity,
+                        child: ElevatedButton(
+                          onPressed: () async {
+                            await _saveUserData();
+                          },
+                          child: const Text("Enregistrer"),
+                        ),
                       ),
                     ],
                   ),
