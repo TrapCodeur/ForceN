@@ -27,6 +27,8 @@ class _TaskListState extends State<TaskList> {
     Query query = FirebaseFirestore.instance
         .collection('tasks')
         //.where('userId', isEqualTo: user.uid)
+        // Si je filtre les taches en fonction des utilsateurs, j'aurais un probleme d'index
+        // De ce fait, quand je me rends dans les onglets firebase firestores sur Index, J'ai ajouté un index mais ça fonctionne pas
         .orderBy('createdAt', descending: true);
 
     if (selectedPriorityType != 'Toutes') {
